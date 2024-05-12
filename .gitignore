@@ -2,6 +2,8 @@ scratch*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.npy
+*.pkl
 
 # C extensions
 *.so
