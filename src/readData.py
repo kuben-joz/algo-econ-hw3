@@ -4,7 +4,6 @@ import re
 def readTestFromFile(fileName):
     with open(fileName) as f:
         input = f.readlines()
-    print(input, flush=True)
     l1 = re.findall("\d+", input[0])
     l2 = re.findall("\d+", input[1])
     n, ba, bd = int(l1[0]), int(l1[1]), int(l1[2])

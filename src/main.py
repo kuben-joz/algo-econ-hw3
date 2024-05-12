@@ -15,7 +15,9 @@ class Player:
 # battlefield can just be a list of ints
 
 
-def bestPureResponseAtt(num_resources, def_strat, battlefields):
+def bestPureResponseAtt(att_player, def_player, battlefields):
+    num_resources = att_player.num_resources
+    def_strat = def_player.strategy
     for v in def_strat:
         assert v >= 0.0 and v <= 1.0
     field_val = []
@@ -30,7 +32,9 @@ def bestPureResponseAtt(num_resources, def_strat, battlefields):
     return res
 
 
-def bestPureResponseDef(num_resources, att_strat, battlefields):
+def bestPureResponseDef(att_player, def_player, battlefields):
+    num_resources = def_player.num_resources
+    att_strat = att_player.strategy
     for v in att_strat:
         assert v >= 0.0 and v <= 1.0
     field_val = []
@@ -45,8 +49,26 @@ def bestPureResponseDef(num_resources, att_strat, battlefields):
     return res
 
 
-def ficticiousPlay(
-    battlefields, num_res_att, num_res_def, epsilon=0.1, max_iters=1_000_000
+def getEpsilon(
+    att_player, def_player, battlefields, best_resp_att=None, best_resp_def=None
+):
+    att_strat = att_player.strategy
+    def_strat = def_player.strategy
+    if best_resp_att is None:
+        best_resp_att = bestPureResponseAtt(bA, def_strat, battlefields)
+    if best_resp_def is None:
+        best_resp_def = bestPureResponseDef(bD, att_strat, battlefields)
+    pay_att = 0.0
+    pay_def = 0.0
+    for i in range(n):
+        pay_att += best_resp_att[i] * battlefields[i] * (1 - def_strat[i])
+        pay_def += (1 - best_resp_def[i]) * battlefields[i] * att_strat[i]
+
+    return abs(pay_att - pay_def)
+
+
+def ficticiousPlay( #todo intial conditiosn player
+    battlefields, num_res_att, num_res_def, epsilon=0.001, max_iters=1_000_000
 ):
     assert num_res_att > 0 and num_res_att < len(battlefields)
     assert num_res_def > 0 and num_res_def < len(battlefields)
@@ -56,12 +78,9 @@ def ficticiousPlay(
     def_play = Player(num_res_def, [0.0] * num_battlefields)
     err = float("inf")
     for t in range(1, max_iters + 1):
-        resp_att = bestPureResponseAtt(
-            att_play.num_resources, def_play.strategy, battlefields
-        )
-        resp_def = bestPureResponseDef(
-            def_play.num_resources, att_play.strategy, battlefields
-        )
+        resp_att = bestPureResponseAtt(att_play, def_play, battlefields)
+        resp_def = bestPureResponseDef(def_play, att_play, battlefields)
+        err = getEpsilon(att_play, def_play, battlefields, resp_att, resp_def)
         for i, (cur, new) in enumerate(zip(att_play.strategy, resp_att)):
             att_play.strategy[i] = (cur * (t - 1) + new) / t
         for i, (cur, new) in enumerate(zip(def_play.strategy, resp_def)):
@@ -100,11 +119,14 @@ def getPayouts(stratA, stratD):
 
 
 n, bA, bD, bfs = readTestFromFile(sys.argv[1])
-#n, bA, bD, bfs = readTestFromFile("test.test")
+# n, bA, bD, bfs = readTestFromFile("test.test")
 
 
 print(n, bA, bD, bfs)
 
-att_strat, def_strat, _, _ = ficticiousPlay(bfs, bA, bD, max_iters=100000)
+att_strat, def_strat, epsilon, iters = ficticiousPlay(bfs, bA, bD, max_iters=10000)
+
 print(att_strat)
 print(def_strat)
+print(epsilon)
+print(iters)
