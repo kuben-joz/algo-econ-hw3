@@ -12,36 +12,67 @@ class Player:
     strategy: List[float]
 
 
-@dataclass
-class Battlefield:
-    num_arenas: int
-    arena_utils: List[int]
+# battlefield can just be a list of ints
 
 
-def bestPureResponseAtt(num_resources, def_strat, battlefield_utils):
+def bestPureResponseAtt(num_resources, def_strat, battlefields):
+    assert len(def_strat) == len(battlefields)
     for v in def_strat:
-        assert(v >= 0.0 and v <= 1.0)
+        assert v >= 0.0 and v <= 1.0
     field_val = []
-    for i, prob, util in enumerate(zip(def_strat, battlefield_utils)):
-        field_val[i] = ((1-prob) * util, i)
-    field_val = sorted(field_val)[-num_resources:] # find nth largest then iterate for O(n) or serach kth largest individually
-    res = [0]*len(def_strat)
+    for i, prob, util in enumerate(zip(def_strat, battlefields)):
+        field_val[i] = ((1 - prob) * util, i)
+    field_val = sorted(field_val)[
+        -num_resources:
+    ]  # find nth largest then iterate for O(n) or serach kth largest individually
+    res = [0.0] * len(def_strat)
     for _, i in field_val:
-        res[i] = 1.0 # todo maybe ints or bools
+        res[i] = 1.0  # todo maybe ints or bools
     return res
 
 
-def bestPureResponseDef(num_resources, att_strat, battlefield_utils):
+def bestPureResponseDef(num_resources, att_strat, battlefields):
+    assert len(att_strat) == len(battlefields)
     for v in att_strat:
-        assert(v >= 0.0 and v <= 1.0)
+        assert v >= 0.0 and v <= 1.0
     field_val = []
-    for i, prob, util in enumerate(zip(att_strat, battlefield_utils)):
+    for i, prob, util in enumerate(zip(att_strat, battlefields)):
         field_val[i] = (prob * util, i)
-    field_val = sorted(field_val)[-num_resources:] # find nth largest then iterate for O(n) or serach kth largest individually
-    res = [0]*len(att_strat)
+    field_val = sorted(field_val)[
+        -num_resources:
+    ]  # find nth largest then iterate for O(n) or serach kth largest individually
+    res = [0.0] * len(att_strat)
     for _, i in field_val:
-        res[i] = 1.0 # todo maybe ints or bools
+        res[i] = 1.0  # todo maybe ints or bools
     return res
+
+
+def ficticiousPlay(
+    battlefields, num_res_att, num_res_def, epsilon=0.1, max_iters=1_000_000
+):
+    assert num_res_att > 0 and num_res_att < len(battlefields)
+    assert num_res_def > 0 and num_res_def < len(battlefields)
+    assert num_res_att < num_res_def
+    num_battlefields = len(battlefields)
+    att_play = Player(num_res_att, [0.0] * num_battlefields)
+    def_play = Player(num_res_def, [0.0] * num_battlefields)
+    err = float("inf")
+    for t in range(1, max_iters + 1):
+        resp_att = bestPureResponseAtt(
+            att_play.num_resources, def_play.strategy, battlefields
+        )
+        resp_def = bestPureResponseDef(
+            def_play.num_resources, att_play.strategy, battlefields
+        )
+        for i, cur, new in enumerate(zip(att_play.strategy, resp_att)):
+           att_play.strategy[i] = (cur * (t-1) + new) / t
+        for i, cur, new in enumerate(zip(def_play.strategy, resp_def)):
+            def_play.strategy[i] = (cur * (t-1) + new) / t
+        if err <= epsilon:
+            break
+
+    return att_play.strategy, def_play.strategy, err, t
+
 
 def getPayouts(stratA, stratD):
     if len(stratA) < n or len(stratD) < n:
