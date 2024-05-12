@@ -16,12 +16,11 @@ class Player:
 
 
 def bestPureResponseAtt(num_resources, def_strat, battlefields):
-    assert len(def_strat) == len(battlefields)
     for v in def_strat:
         assert v >= 0.0 and v <= 1.0
     field_val = []
-    for i, prob, util in enumerate(zip(def_strat, battlefields)):
-        field_val[i] = ((1 - prob) * util, i)
+    for i, (prob, util) in enumerate(zip(def_strat, battlefields, strict=True)):
+        field_val.append(((1 - prob) * util, i))
     field_val = sorted(field_val)[
         -num_resources:
     ]  # find nth largest then iterate for O(n) or serach kth largest individually
@@ -32,12 +31,11 @@ def bestPureResponseAtt(num_resources, def_strat, battlefields):
 
 
 def bestPureResponseDef(num_resources, att_strat, battlefields):
-    assert len(att_strat) == len(battlefields)
     for v in att_strat:
         assert v >= 0.0 and v <= 1.0
     field_val = []
-    for i, prob, util in enumerate(zip(att_strat, battlefields)):
-        field_val[i] = (prob * util, i)
+    for i, (prob, util) in enumerate(zip(att_strat, battlefields, strict=True)):
+        field_val.append((prob * util, i))
     field_val = sorted(field_val)[
         -num_resources:
     ]  # find nth largest then iterate for O(n) or serach kth largest individually
@@ -64,10 +62,10 @@ def ficticiousPlay(
         resp_def = bestPureResponseDef(
             def_play.num_resources, att_play.strategy, battlefields
         )
-        for i, cur, new in enumerate(zip(att_play.strategy, resp_att)):
-           att_play.strategy[i] = (cur * (t-1) + new) / t
-        for i, cur, new in enumerate(zip(def_play.strategy, resp_def)):
-            def_play.strategy[i] = (cur * (t-1) + new) / t
+        for i, (cur, new) in enumerate(zip(att_play.strategy, resp_att)):
+            att_play.strategy[i] = (cur * (t - 1) + new) / t
+        for i, (cur, new) in enumerate(zip(def_play.strategy, resp_def)):
+            def_play.strategy[i] = (cur * (t - 1) + new) / t
         if err <= epsilon:
             break
 
@@ -102,5 +100,11 @@ def getPayouts(stratA, stratD):
 
 
 n, bA, bD, bfs = readTestFromFile(sys.argv[1])
+#n, bA, bD, bfs = readTestFromFile("test.test")
+
 
 print(n, bA, bD, bfs)
+
+att_strat, def_strat, _, _ = ficticiousPlay(bfs, bA, bD, max_iters=100000)
+print(att_strat)
+print(def_strat)
