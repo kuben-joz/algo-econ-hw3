@@ -67,7 +67,7 @@ def getEpsilon(
     return abs(pay_att - pay_def)
 
 
-def ficticiousPlay( #todo intial conditiosn player
+def ficticiousPlay(  # todo intial conditiosn player
     battlefields, num_res_att, num_res_def, epsilon=0.001, max_iters=1_000_000
 ):
     assert num_res_att > 0 and num_res_att < len(battlefields)
@@ -76,19 +76,20 @@ def ficticiousPlay( #todo intial conditiosn player
     num_battlefields = len(battlefields)
     att_play = Player(num_res_att, [0.0] * num_battlefields)
     def_play = Player(num_res_def, [0.0] * num_battlefields)
-    err = float("inf")
+    epsilons = []
     for t in range(1, max_iters + 1):
         resp_att = bestPureResponseAtt(att_play, def_play, battlefields)
         resp_def = bestPureResponseDef(def_play, att_play, battlefields)
         err = getEpsilon(att_play, def_play, battlefields, resp_att, resp_def)
+        epsilons.append(err)
+        if err <= epsilon:
+            break
         for i, (cur, new) in enumerate(zip(att_play.strategy, resp_att)):
             att_play.strategy[i] = (cur * (t - 1) + new) / t
         for i, (cur, new) in enumerate(zip(def_play.strategy, resp_def)):
             def_play.strategy[i] = (cur * (t - 1) + new) / t
-        if err <= epsilon:
-            break
 
-    return att_play.strategy, def_play.strategy, err, t
+    return att_play.strategy, def_play.strategy, epsilons
 
 
 def getPayouts(stratA, stratD):
@@ -124,9 +125,9 @@ n, bA, bD, bfs = readTestFromFile(sys.argv[1])
 
 print(n, bA, bD, bfs)
 
-att_strat, def_strat, epsilon, iters = ficticiousPlay(bfs, bA, bD, max_iters=10000)
+att_strat, def_strat, epsilons = ficticiousPlay(bfs, bA, bD, max_iters=10000)
+num_iters = len(epsilons)
 
 print(att_strat)
 print(def_strat)
-print(epsilon)
-print(iters)
+print(len(epsilons))
