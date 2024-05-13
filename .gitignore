@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 *.npy
 *.pkl
+*.zip
 
 # C extensions
 *.so
